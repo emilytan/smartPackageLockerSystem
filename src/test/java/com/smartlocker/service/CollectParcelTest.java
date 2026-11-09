@@ -33,7 +33,7 @@ class CollectParcelTest {
         PickupReceipt receipt = station.retrieveParcel(1, FIRST_CODE);
 
         // Then the pickup is confirmed for her parcel
-        assertEquals(new PickupReceipt("SPX-1001", 1), receipt);
+        assertEquals(new PickupReceipt("SPX-1001", 1, java.math.BigDecimal.ZERO), receipt);
     }
 
     @Test
@@ -88,7 +88,7 @@ class CollectParcelTest {
         assertFalse(statusOf(station, 1).available());
 
         // And Alice can still collect it with the right code
-        assertEquals(new PickupReceipt("SPX-1001", 1), station.retrieveParcel(1, FIRST_CODE));
+        assertEquals(new PickupReceipt("SPX-1001", 1, java.math.BigDecimal.ZERO), station.retrieveParcel(1, FIRST_CODE));
     }
 
     @Test
