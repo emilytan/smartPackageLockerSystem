@@ -1,6 +1,7 @@
 package com.smartlocker.service;
 
 import com.smartlocker.contract.PickupCodeGenerator;
+import com.smartlocker.contract.StorageFeeCalculator;
 import com.smartlocker.exception.DuplicateParcelException;
 import com.smartlocker.exception.InvalidInputException;
 import com.smartlocker.exception.InvalidPickupException;
@@ -17,24 +18,33 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
 
 /**
  * The use cases of a locker station: create lockers, list them, store a parcel and collect a parcel.
  *
- * <p>Not thread-safe yet. Safe concurrent access is added in the next step, test-first.
+ * <p>All public operations are synchronized on this service instance. This makes each
+ * in-memory use case atomic and prevents two requests from allocating the same locker.
  */
 public class LockerService {
 
     private final List<Locker> lockers = new ArrayList<>(); // kept in creation order
     private final PickupCodeGenerator codeGenerator;
-    private final Clock clock;
+    private static final int MAX_PICKUP_CODE_ATTEMPTS = 100;
 
-    public LockerService(PickupCodeGenerator codeGenerator, Clock clock) {
-        this.codeGenerator = codeGenerator;
-        this.clock = clock;
+    private final Clock clock;
+    private final StorageFeeCalculator storageFeeCalculator;
+
+    public LockerService(
+            PickupCodeGenerator codeGenerator,
+            Clock clock,
+            StorageFeeCalculator storageFeeCalculator) {
+        this.codeGenerator = Objects.requireNonNull(codeGenerator, "codeGenerator");
+        this.clock = Objects.requireNonNull(clock, "clock");
+        this.storageFeeCalculator = Objects.requireNonNull(storageFeeCalculator, "storageFeeCalculator");
     }
 
-    public LockerStatus createLocker(LockerSize size) {
+    public synchronized LockerStatus createLocker(LockerSize size) {
         if (size == null) {
             throw new InvalidInputException("Locker size is required");
         }
@@ -43,11 +53,11 @@ public class LockerService {
         return LockerStatus.of(locker);
     }
 
-    public List<LockerStatus> listLockers() {
+    public synchronized List<LockerStatus> listLockers() {
         return lockers.stream().map(LockerStatus::of).toList();
     }
 
-    public StoreReceipt storeParcel(Parcel parcel) {
+    public synchronized StoreReceipt storeParcel(Parcel parcel) {
         if (parcel == null) {
             throw new InvalidInputException("Parcel is required");
         }
@@ -60,14 +70,17 @@ public class LockerService {
         return new StoreReceipt(locker.id(), pickupCode);
     }
 
-    public PickupReceipt retrieveParcel(int lockerId, String pickupCode) {
+    public synchronized PickupReceipt retrieveParcel(int lockerId, String pickupCode) {
         Locker locker = findLocker(lockerId).orElseThrow(InvalidPickupException::new);
         if (!locker.isUnlockedBy(pickupCode)) { // covers both a wrong code and an empty locker
             throw new InvalidPickupException();
         }
 
-        Deposit deposit = locker.release();
-        return new PickupReceipt(deposit.parcel().trackingId(), locker.id());
+        Deposit deposit = locker.deposit().orElseThrow(InvalidPickupException::new);
+        // Calculate before releasing the parcel so a calculation failure leaves the locker intact.
+        var storageFee = storageFeeCalculator.calculate(deposit.storedAt(), clock.instant());
+        locker.release();
+        return new PickupReceipt(deposit.parcel().trackingId(), locker.id(), storageFee);
     }
 
     private void rejectIfAlreadyStored(Parcel parcel) {
@@ -87,11 +100,17 @@ public class LockerService {
     }
 
     private String generateUnusedPickupCode() {
-        String code = codeGenerator.next();
-        while (isPickupCodeInUse(code)) {
-            code = codeGenerator.next();
+        for (int attempt = 0; attempt < MAX_PICKUP_CODE_ATTEMPTS; attempt++) {
+            String code = codeGenerator.next();
+            if (code == null || code.isBlank()) {
+                throw new IllegalStateException("Pickup code generator returned an empty code");
+            }
+            if (!isPickupCodeInUse(code)) {
+                return code;
+            }
         }
-        return code;
+        throw new IllegalStateException(
+                "Unable to generate a unique pickup code after " + MAX_PICKUP_CODE_ATTEMPTS + " attempts");
     }
 
     private boolean isPickupCodeInUse(String pickupCode) {

@@ -6,6 +6,8 @@ package com.smartlocker.exception;
  */
 public class InvalidPickupException extends LockerException {
 
+    private static final long serialVersionUID = 1L;
+
     public InvalidPickupException() {
         super("Invalid locker ID or pickup code");
     }
