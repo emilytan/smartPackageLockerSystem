@@ -3,17 +3,20 @@ package com.smartlocker.service;
 import com.smartlocker.contract.PickupCodeGenerator;
 import com.smartlocker.exception.DuplicateParcelException;
 import com.smartlocker.exception.InvalidInputException;
+import com.smartlocker.exception.InvalidPickupException;
 import com.smartlocker.exception.NoSuitableLockerException;
 import com.smartlocker.model.Deposit;
 import com.smartlocker.model.Locker;
 import com.smartlocker.model.LockerSize;
 import com.smartlocker.model.Parcel;
 import com.smartlocker.result.LockerStatus;
+import com.smartlocker.result.PickupReceipt;
 import com.smartlocker.result.StoreReceipt;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The use cases of a locker station: create lockers, list them, store a parcel and collect a parcel.
@@ -57,6 +60,16 @@ public class LockerService {
         return new StoreReceipt(locker.id(), pickupCode);
     }
 
+    public PickupReceipt retrieveParcel(int lockerId, String pickupCode) {
+        Locker locker = findLocker(lockerId).orElseThrow(InvalidPickupException::new);
+        if (!locker.isUnlockedBy(pickupCode)) { // covers both a wrong code and an empty locker
+            throw new InvalidPickupException();
+        }
+
+        Deposit deposit = locker.release();
+        return new PickupReceipt(deposit.parcel().trackingId(), locker.id());
+    }
+
     private void rejectIfAlreadyStored(Parcel parcel) {
         boolean alreadyStored = lockers.stream().anyMatch(locker -> locker.holdsParcel(parcel.trackingId()));
         if (alreadyStored) {
@@ -83,5 +96,9 @@ public class LockerService {
 
     private boolean isPickupCodeInUse(String pickupCode) {
         return lockers.stream().anyMatch(locker -> locker.isUnlockedBy(pickupCode));
+    }
+
+    private Optional<Locker> findLocker(int lockerId) {
+        return lockers.stream().filter(locker -> locker.id() == lockerId).findFirst();
     }
 }
