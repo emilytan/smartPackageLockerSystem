@@ -1,9 +1,10 @@
 package com.smartlocker.support;
 
-import com.smartlocker.service.LockerService;
-import com.smartlocker.implementation.TieredStorageFeeCalculator;
+import com.smartlocker.LockerService;
+import com.smartlocker.RandomPickupCodeGenerator;
+import com.smartlocker.TieredStorageFeeCalculator;
+import com.smartlocker.LockerStatus;
 import java.math.BigDecimal;
-import com.smartlocker.result.LockerStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -27,13 +28,23 @@ public final class SampleStations {
     /** A station whose code generator hands out exactly these codes, in this order. */
     public static LockerService stationHandingOutCodes(String... codes) {
         Iterator<String> nextCode = Arrays.asList(codes).iterator();
-        return new LockerService(nextCode::next, CLOCK, new TieredStorageFeeCalculator(BigDecimal.ONE));
+        return new LockerService(new RandomPickupCodeGenerator() {
+            @Override
+            public String next() {
+                return nextCode.next();
+            }
+        }, CLOCK, new TieredStorageFeeCalculator(BigDecimal.ONE));
     }
 
     /** A station that never runs out of codes (100001, 100002, ...) for tests that don't care about them. */
     public static LockerService station() {
         AtomicInteger counter = new AtomicInteger(100_000);
-        return new LockerService(() -> String.valueOf(counter.incrementAndGet()), CLOCK, new TieredStorageFeeCalculator(BigDecimal.ONE));
+        return new LockerService(new RandomPickupCodeGenerator() {
+            @Override
+            public String next() {
+                return String.valueOf(counter.incrementAndGet());
+            }
+        }, CLOCK, new TieredStorageFeeCalculator(BigDecimal.ONE));
     }
 
     public static LockerStatus statusOf(LockerService station, int lockerId) {

@@ -11,14 +11,45 @@ A Java 21 implementation of the Smart Package Locker Management System coding ch
 - Calculate tiered storage fees and return the fee in the pickup receipt.
 - Serialize concurrent operations within one `LockerService` instance so a locker cannot be assigned to two requests.
 
+## Project structure
+
+Start with `LockerService.java`; it shows the operations the system supports. Production code is intentionally kept in one package so a new developer can find the classes without navigating several layers:
+
+```text
+src/main/java/com/smartlocker/
+  LockerService.java
+  Locker.java
+  LockerSize.java
+  Parcel.java
+  Deposit.java
+  RandomPickupCodeGenerator.java
+  TieredStorageFeeCalculator.java
+  StoreReceipt.java
+  PickupReceipt.java
+  LockerStatus.java
+  LockerException.java
+  InvalidInputException.java
+  InvalidPickupException.java
+  DuplicateParcelException.java
+  NoSuitableLockerException.java
+  ParcelTooLargeException.java
+
+src/test/java/com/smartlocker/
+  ...unit and service tests...
+src/test/java/com/smartlocker/support/
+  SampleParcels.java
+  SampleStations.java
+```
+
+There are no `package-info.java` files. The README provides the project overview in one place; package-level documentation is unnecessary for a single small package.
+
 ## Design
 
-- `Parcel`, `Locker`, `LockerSize` and `Deposit` model the domain and enforce their own invariants.
-- `LockerService` coordinates use cases and owns the in-memory collection of lockers.
-- `PickupCodeGenerator` and `StorageFeeCalculator` are injected contracts, keeping code generation and pricing policies replaceable and independently testable.
-- `TieredStorageFeeCalculator` implements the challenge's tiered pricing example.
-- Result records (`StoreReceipt`, `PickupReceipt`, `LockerStatus`) expose data without exposing mutable locker state.
-- Business exceptions communicate expected failures to the caller.
+- All production classes live in one `com.smartlocker` package. The challenge is small enough that separate `contract`, `implementation`, `model`, `result` and `service` packages would add navigation without creating useful boundaries.
+- `LockerService` is the entry point. It coordinates creating lockers, listing them, storing parcels and retrieving parcels.
+- `Parcel`, `Locker`, `LockerSize` and `Deposit` hold the business data and rules.
+- `RandomPickupCodeGenerator` generates secure pickup codes; `TieredStorageFeeCalculator` calculates storage fees. These are concrete classes injected into the service, not one-method interfaces. The service depends on the actual capabilities it uses without introducing extra abstraction for only one implementation.
+- Result records (`StoreReceipt`, `PickupReceipt`, `LockerStatus`) are the values returned by the service. Business exceptions describe expected failures.
 
 ## Storage fee assumptions
 
@@ -50,7 +81,7 @@ This does not coordinate multiple application processes or service instances. A 
 Requires JDK 21 and Maven 3.
 
 ```bash
-mvn test
+mvn clean test
 ```
 
 The tests cover domain validation, locker sizing and allocation, retrieval and invalid requests, tiered fee boundaries, receipt integration, and concurrent allocation.
