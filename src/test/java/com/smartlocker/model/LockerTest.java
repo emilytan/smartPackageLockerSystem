@@ -1,4 +1,9 @@
-package com.smartlocker;
+package com.smartlocker.model;
+
+import com.smartlocker.model.Deposit;
+import com.smartlocker.model.Locker;
+import com.smartlocker.model.LockerSize;
+import com.smartlocker.model.Parcel;
 
 import static com.smartlocker.support.SampleParcels.alicesPhoneCase;
 import static com.smartlocker.support.SampleParcels.bensPaperbacks;
@@ -18,6 +23,12 @@ class LockerTest {
 
     private static Deposit depositOf(Parcel parcel) {
         return new Deposit(parcel, PICKUP_CODE, NOW);
+    }
+
+    @Test
+    void lockerIdMustBeGreaterThanZero() {
+        assertThrows(IllegalArgumentException.class, () -> new Locker(0, LockerSize.SMALL));
+        assertThrows(IllegalArgumentException.class, () -> new Locker(-1, LockerSize.SMALL));
     }
 
     @Test

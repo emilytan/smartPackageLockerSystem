@@ -1,4 +1,4 @@
-package com.smartlocker;
+package com.smartlocker.exception;
 
 /**
  * The locker ID and pickup code do not match a stored parcel. The message is deliberately the same

@@ -1,4 +1,18 @@
-package com.smartlocker;
+package com.smartlocker.service;
+
+import com.smartlocker.codegenerator.RandomPickupCodeGenerator;
+import com.smartlocker.exception.DuplicateParcelException;
+import com.smartlocker.exception.InvalidInputException;
+import com.smartlocker.exception.InvalidPickupException;
+import com.smartlocker.exception.NoSuitableLockerException;
+import com.smartlocker.feecalculator.TieredStorageFeeCalculator;
+import com.smartlocker.model.Deposit;
+import com.smartlocker.model.Locker;
+import com.smartlocker.model.LockerSize;
+import com.smartlocker.model.Parcel;
+import com.smartlocker.result.LockerStatus;
+import com.smartlocker.result.PickupReceipt;
+import com.smartlocker.result.StoreReceipt;
 
 import java.time.Clock;
 import java.util.ArrayList;

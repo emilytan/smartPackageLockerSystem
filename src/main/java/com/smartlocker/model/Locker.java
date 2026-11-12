@@ -1,4 +1,4 @@
-package com.smartlocker;
+package com.smartlocker.model;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -14,6 +14,9 @@ public class Locker {
     private Deposit deposit; // null while the locker is empty
 
     public Locker(int id, LockerSize size) {
+        if (id <= 0) {
+            throw new IllegalArgumentException("Locker ID must be greater than zero");
+        }
         this.id = id;
         this.size = Objects.requireNonNull(size, "size");
     }

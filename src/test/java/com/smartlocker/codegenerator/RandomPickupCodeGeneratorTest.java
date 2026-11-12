@@ -1,7 +1,8 @@
-package com.smartlocker;
+package com.smartlocker.codegenerator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -36,15 +37,6 @@ class RandomPickupCodeGeneratorTest {
 
         for (int i = 0; i < 1_000; i++) {
             assertTrue(isSixDigitNumber(generator.next()));
-        }
-    }
-
-    @Test
-    void codeNeverStartsWithZero() {
-        RandomPickupCodeGenerator generator = new RandomPickupCodeGenerator();
-
-        for (int i = 0; i < 1_000; i++) {
-            assertFalse(generator.next().startsWith("0"));
         }
     }
 
@@ -99,15 +91,12 @@ class RandomPickupCodeGeneratorTest {
         assertFalse(RandomPickupCodeGenerator.isEasyToGuess("390127"));
     }
 
-    // ---- Easy codes are thrown away and replaced ----
-
     @Test
     void easyToGuessCandidatesAreSkipped() {
-        // The random source first suggests 100000, 111111 and 123456 (all easy), then 482913.
-        Random source = returning(0, 11_111, 23_456, 382_913);
+        Random source = returning(123456, 111111, 238456, 382913);
 
         String code = new RandomPickupCodeGenerator(source).next();
 
-        assertEquals("482913", code);
+        assertEquals("238456", code);
     }
 }

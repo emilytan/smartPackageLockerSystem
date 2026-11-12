@@ -1,5 +1,9 @@
-package com.smartlocker;
+package com.smartlocker.service;
 
+import com.smartlocker.exception.InvalidInputException;
+import com.smartlocker.model.LockerSize;
+import com.smartlocker.result.LockerStatus;
+import com.smartlocker.service.LockerService;
 
 import static com.smartlocker.support.SampleStations.station;
 import static org.junit.jupiter.api.Assertions.assertEquals;

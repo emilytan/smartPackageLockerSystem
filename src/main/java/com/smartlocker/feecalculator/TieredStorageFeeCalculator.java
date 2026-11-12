@@ -1,4 +1,4 @@
-package com.smartlocker;
+package com.smartlocker.feecalculator;
 
 import java.math.BigDecimal;
 import java.time.Duration;

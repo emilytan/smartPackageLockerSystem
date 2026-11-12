@@ -1,4 +1,4 @@
-package com.smartlocker;
+package com.smartlocker.result;
 
 import java.math.BigDecimal;
 import java.util.Objects;

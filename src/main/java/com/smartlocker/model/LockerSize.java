@@ -1,4 +1,6 @@
-package com.smartlocker;
+package com.smartlocker.model;
+
+import com.smartlocker.exception.ParcelTooLargeException;
 
 import java.util.Arrays;
 

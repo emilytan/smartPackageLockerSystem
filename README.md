@@ -1,79 +1,32 @@
 # Smart Package Locker Management System
 
-A Java 21 implementation of the Smart Package Locker Management System coding challenge. The solution exposes the core use cases as a Java service; a REST API, CLI, notification provider and physical locker hardware are outside the challenge scope.
-
-## Requirements implemented
-
-- Create lockers of different sizes and list their availability.
-- Store a parcel in the smallest available locker that can accommodate its dimensions.
-- Generate a unique pickup code for every parcel currently stored.
-- Retrieve a parcel using its locker ID and pickup code, then make the locker available again.
-- Calculate tiered storage fees and return the fee in the pickup receipt.
-- Serialize concurrent operations within one `LockerService` instance so a locker cannot be assigned to two requests.
-
-## Project structure
-
-Start with `LockerService.java`; it shows the operations the system supports. Production code is intentionally kept in one package so a new developer can find the classes without navigating several layers:
-
-```text
-src/main/java/com/smartlocker/
-  LockerService.java
-  Locker.java
-  LockerSize.java
-  Parcel.java
-  Deposit.java
-  RandomPickupCodeGenerator.java
-  TieredStorageFeeCalculator.java
-  StoreReceipt.java
-  PickupReceipt.java
-  LockerStatus.java
-  LockerException.java
-  InvalidInputException.java
-  InvalidPickupException.java
-  DuplicateParcelException.java
-  NoSuitableLockerException.java
-  ParcelTooLargeException.java
-
-src/test/java/com/smartlocker/
-  ...unit and service tests...
-src/test/java/com/smartlocker/support/
-  SampleParcels.java
-  SampleStations.java
-```
-
-There are no `package-info.java` files. The README provides the project overview in one place; package-level documentation is unnecessary for a single small package.
+A Java implementation of the Smart Package Locker Management System. REST API and notification are out of scope.
 
 ## Design
 
-- All production classes live in one `com.smartlocker` package. The challenge is small enough that separate `contract`, `implementation`, `model`, `result` and `service` packages would add navigation without creating useful boundaries.
 - `LockerService` is the entry point. It coordinates creating lockers, listing them, storing parcels and retrieving parcels.
-- `Parcel`, `Locker`, `LockerSize` and `Deposit` hold the business data and rules.
-- `RandomPickupCodeGenerator` generates secure pickup codes; `TieredStorageFeeCalculator` calculates storage fees. These are concrete classes injected into the service, not one-method interfaces. The service depends on the actual capabilities it uses without introducing extra abstraction for only one implementation.
-- Result records (`StoreReceipt`, `PickupReceipt`, `LockerStatus`) are the values returned by the service. Business exceptions describe expected failures.
+- `model` contains the core business objects and rules: `Parcel`, `Locker`, `LockerSize` and `Deposit`.
+- `feecalculator` and `codegenerator` keep storage pricing and pickup-code generation separate from the service workflow. These are concrete classes injected into the service.
+- `result` contains the records returned by the service.
+- `exception` contains the exceptions used to describe failures.
 
 ## Storage fee assumptions
 
-The challenge specifies a fixed base rate `X` but does not specify its numeric value or currency. The implementation therefore requires the caller to configure `X` as a `BigDecimal` when constructing `TieredStorageFeeCalculator`.
+The challenge specifies a fixed base rate `X`. The implementation therefore configure `X` as a `BigDecimal` when constructing `TieredStorageFeeCalculator`.
 
-A billable day is a 24-hour period measured from the exact `storedAt` instant, not a calendar date or midnight boundary. Only completed 24-hour periods count as billable days. For example, 23 hours is zero days, 24 hours is one day, and 24 hours and one second is still one day; 48 hours is two days. The tiers are:
+A billable day is a 24-hour period measured from the exact `storedAt` instant. Only completed 24-hour periods count as billable days. For example, 23 hours is zero days, 24 hours is one day, and 24 hours and one second is one day; 48 hours is two days. The tiers are:
 
-- Days 1–5: `X` per day.
-- Days 6–10: `2X` per day.
-- Day 11 onwards: `3X` per day.
+A parcel retrieved at the same instant it was stored incurs no fee. The configured rate is expressed in the client's chosen currency; currency formatting and payment collection are outside this domain service.
 
-A parcel retrieved at the same instant it was stored incurs no fee. The configured rate is expressed in the client's chosen currency/unit; currency formatting and payment collection are outside this domain service.
-
-## Concurrency approach and trade-off
-
-All public `LockerService` operations are synchronized. This deliberately simple approach makes each in-memory use case atomic within a single service instance, including selecting a locker, generating a code and storing the deposit. It is appropriate for this small, single-process challenge and avoids introducing unnecessary concurrent collections or locking abstractions.
-
-This does not coordinate multiple application processes or service instances. A production deployment with multiple application nodes should move allocation into a transactional persistence layer and use database constraints/locking (or an equivalent atomic reservation mechanism).
 
 ## Other assumptions and limitations
 
-- State is held in memory and is lost when the process stops; persistence is not required by the challenge.
-- Pickup codes are generated by `SecureRandom` in the default generator and are unique among parcels currently stored. The service limits collision retries to avoid an infinite loop if a generator is faulty.
-- Notification delivery, authentication/authorization, pickup-code expiry, rate limiting, audit logging, payment processing and physical door control are external concerns and are not implemented.
+- Locker Sizes of S, M and L assumptions were made as:
+    - S: 40cm x 30cm x 10cm
+    - M: 40cm x 30cm x 20cm
+    - L: 40cm x 30cm x 30cm
+- Pickup codes are generated by `SecureRandom` in the default generator and are unique among parcels currently stored.
+- Notification delivery, authentication/authorization, pickup-code expiry, payment processing are out of scoop and not implemented.
 - The service returns a calculated fee; it does not charge a payment method.
 
 ## Run tests
@@ -84,8 +37,6 @@ Requires JDK 21 and Maven 3.
 mvn clean test
 ```
 
-The tests cover domain validation, locker sizing and allocation, retrieval and invalid requests, tiered fee boundaries, receipt integration, and concurrent allocation.
-
 ## AI assistance
 
-ChatGPT was used to review the challenge requirements and existing implementation, identify missing Level 3 and Level 4 behaviour, discuss design trade-offs, and assist with the storage-fee implementation, concurrency handling, additional tests and this documentation. The submitting engineer reviewed the changes and remains responsible for validating the requirements, running the full Maven test suite and explaining all design decisions. Update this disclosure if other AI tools were also used during development.
+Claude was used to first understand the requirements and scope of the project, then generate code after having a clear understanding of the project and assumptions. ChatGPT was later used to evaluate code generated by Claude and make improvement where needed.  

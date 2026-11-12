@@ -1,5 +1,10 @@
-package com.smartlocker;
+package com.smartlocker.service;
 
+import com.smartlocker.exception.InvalidPickupException;
+import com.smartlocker.model.LockerSize;
+import com.smartlocker.result.PickupReceipt;
+import com.smartlocker.result.StoreReceipt;
+import com.smartlocker.service.LockerService;
 
 import static com.smartlocker.support.SampleParcels.alicesPhoneCase;
 import static com.smartlocker.support.SampleParcels.bensPaperbacks;

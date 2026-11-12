@@ -1,5 +1,11 @@
-package com.smartlocker;
+package com.smartlocker.service;
 
+import com.smartlocker.codegenerator.RandomPickupCodeGenerator;
+import com.smartlocker.exception.NoSuitableLockerException;
+import com.smartlocker.feecalculator.TieredStorageFeeCalculator;
+import com.smartlocker.model.LockerSize;
+import com.smartlocker.model.Parcel;
+import com.smartlocker.service.LockerService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -47,7 +53,7 @@ class ConcurrentLockerServiceTest {
                     try {
                         return service.storeParcel(new Parcel(
                                 "TRACK-" + parcelNumber, "Customer", 10, 10, 10)).lockerId();
-                    } catch (com.smartlocker.NoSuitableLockerException unavailable) {
+                    } catch (com.smartlocker.exception.NoSuitableLockerException unavailable) {
                         return -1;
                     }
                 };

@@ -1,9 +1,10 @@
 package com.smartlocker.support;
 
-import com.smartlocker.LockerService;
-import com.smartlocker.RandomPickupCodeGenerator;
-import com.smartlocker.TieredStorageFeeCalculator;
-import com.smartlocker.LockerStatus;
+import com.smartlocker.codegenerator.RandomPickupCodeGenerator;
+import com.smartlocker.feecalculator.TieredStorageFeeCalculator;
+import com.smartlocker.result.LockerStatus;
+import com.smartlocker.service.LockerService;
+
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;

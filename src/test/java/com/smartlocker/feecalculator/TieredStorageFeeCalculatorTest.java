@@ -1,4 +1,6 @@
-package com.smartlocker;
+package com.smartlocker.feecalculator;
+
+import com.smartlocker.feecalculator.TieredStorageFeeCalculator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

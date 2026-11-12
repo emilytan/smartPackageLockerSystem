@@ -1,4 +1,7 @@
-package com.smartlocker;
+package com.smartlocker.model;
+
+import com.smartlocker.exception.ParcelTooLargeException;
+import com.smartlocker.model.LockerSize;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

@@ -1,11 +1,22 @@
-package com.smartlocker;
+package com.smartlocker.service;
 
+import com.smartlocker.codegenerator.RandomPickupCodeGenerator;
+import com.smartlocker.exception.DuplicateParcelException;
+import com.smartlocker.exception.InvalidInputException;
+import com.smartlocker.exception.NoSuitableLockerException;
+import com.smartlocker.exception.ParcelTooLargeException;
+import com.smartlocker.feecalculator.TieredStorageFeeCalculator;
+import com.smartlocker.model.LockerSize;
+import com.smartlocker.result.LockerStatus;
+import com.smartlocker.result.StoreReceipt;
+import com.smartlocker.service.LockerService;
 
 import static com.smartlocker.support.SampleParcels.alicesPhoneCase;
 import static com.smartlocker.support.SampleParcels.bensPaperbacks;
 import static com.smartlocker.support.SampleParcels.carolsEarbuds;
 import static com.smartlocker.support.SampleParcels.davidsShoeBox;
 import static com.smartlocker.support.SampleParcels.franksOfficeChair;
+import static com.smartlocker.support.SampleStations.CLOCK;
 import static com.smartlocker.support.SampleStations.FIRST_CODE;
 import static com.smartlocker.support.SampleStations.SECOND_CODE;
 import static com.smartlocker.support.SampleStations.station;
@@ -15,7 +26,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 /** Level 1, part 2: storing a parcel in the smallest available locker. */
@@ -188,6 +201,28 @@ class StoreParcelTest {
     @Test
     void parcelIsRequired() {
         assertThrows(InvalidInputException.class, () -> station().storeParcel(null));
+    }
+
+    @Test
+    void failsSafelyWhenNoUniquePickupCodeCanBeGenerated() {
+        AtomicInteger attempts = new AtomicInteger();
+        RandomPickupCodeGenerator repeatingGenerator = new RandomPickupCodeGenerator() {
+            @Override
+            public String next() {
+                attempts.incrementAndGet();
+                return FIRST_CODE;
+            }
+        };
+        LockerService station = new LockerService(
+                repeatingGenerator, CLOCK, new TieredStorageFeeCalculator(BigDecimal.ONE));
+        station.createLocker(LockerSize.SMALL);
+        station.createLocker(LockerSize.SMALL);
+        station.storeParcel(alicesPhoneCase());
+
+        assertThrows(IllegalStateException.class, () -> station.storeParcel(bensPaperbacks()));
+
+        assertEquals(101, attempts.get());
+        assertTrue(statusOf(station, 2).available());
     }
 
     @Test

@@ -1,4 +1,6 @@
-package com.smartlocker;
+package com.smartlocker.model;
+
+import com.smartlocker.exception.InvalidInputException;
 
 /** A parcel handed in by a delivery agent. Dimensions are in cm. */
 public record Parcel(String trackingId, String customer, int lengthCm, int widthCm, int heightCm) {

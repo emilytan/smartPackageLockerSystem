@@ -1,4 +1,4 @@
-package com.smartlocker;
+package com.smartlocker.model;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -8,7 +8,9 @@ public record Deposit(Parcel parcel, String pickupCode, Instant storedAt) {
 
     public Deposit {
         Objects.requireNonNull(parcel, "parcel");
-        Objects.requireNonNull(pickupCode, "pickupCode");
+        if (pickupCode == null || pickupCode.isBlank()) {
+            throw new IllegalArgumentException("Pickup code is required");
+        }
         Objects.requireNonNull(storedAt, "storedAt");
     }
 }

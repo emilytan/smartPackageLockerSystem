@@ -1,6 +1,6 @@
 package com.smartlocker.support;
 
-import com.smartlocker.Parcel;
+import com.smartlocker.model.Parcel;
 
 /**
  * Ready-made parcels for tests, each named after a recognisable person and item.
